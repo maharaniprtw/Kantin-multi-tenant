@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Modules\Admin\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreTenantRequest;
 use App\Models\Canteen;
 use App\Models\Tenant;
 use App\Models\UserCanteenRole;
-use App\Modules\Admin\Http\Requests\StoreTenantRequest;
 use App\Modules\Admin\Services\CreateTenant;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -36,14 +36,14 @@ final class AdminTenantController extends Controller
         $canteen = $this->canteen($request);
         $tenants = Tenant::query()->where('canteen_id', $canteen->id)->orderBy('display_name')->get();
 
-        return view('admin::tenants.index', compact('canteen', 'tenants'));
+        return view('admin.tenants.index', compact('canteen', 'tenants'));
     }
 
     public function create(): View
     {
         $this->authorize('create', Tenant::class);
 
-        return view('admin::tenants.create');
+        return view('admin.tenants.create');
     }
 
     public function store(StoreTenantRequest $request): RedirectResponse
@@ -65,7 +65,9 @@ final class AdminTenantController extends Controller
         $this->authorize('update', $tenant);
         $tenant->load(['balance']);
         $commissions = $tenant->commissionSchemes()->orderByDesc('valid_from')->get();
+        $bankAccounts = $tenant->bankAccounts()->orderByDesc('is_primary')->get();
+        $members = $tenant->tenantRoles()->with('user')->get();
 
-        return view('admin::tenants.edit', compact('tenant', 'commissions'));
+        return view('admin.tenants.edit', compact('tenant', 'commissions', 'bankAccounts', 'members'));
     }
 }

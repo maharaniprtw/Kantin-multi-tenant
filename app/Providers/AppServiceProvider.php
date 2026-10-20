@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Scoped: satu instance per request/job; direset di lifecycle berikutnya (tidak bocor).
+        // Scoped: satu instance per request/job; tidak bocor ke lifecycle berikutnya.
         $this->app->scoped(
             TenantContext::class,
             fn (): TenantContext => new TenantContext,
@@ -34,7 +34,27 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        View::addNamespace('probe', base_path('tests/Fixtures/Modules/Probe/resources/views'));
+        // Namespace view untuk setiap modul.
+        foreach ([
+            'Admin',
+            'Catalog',
+            'Ordering',
+            'Payments',
+            'Kitchen',
+            'Reporting',
+        ] as $module) {
+            View::addNamespace(
+                strtolower($module),
+                app_path("Modules/{$module}/resources/views"),
+            );
+        }
+
+        // Namespace dan komponen Livewire untuk pengujian.
+        View::addNamespace(
+            'probe',
+            base_path('tests/Fixtures/Modules/Probe/resources/views'),
+        );
+
         Livewire::component('probe::counter', ProbeCounter::class);
 
         $this->configureDefaults();
@@ -42,14 +62,22 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Rate limiter untuk endpoint publik sensitif (mengurangi brute force token QR).
+     * Rate limiter untuk endpoint publik sensitif.
      */
     protected function configureRateLimiters(): void
     {
-        RateLimiter::for('qr-scan', fn (Request $request): Limit => Limit::perMinute(30)->by($request->ip() ?? 'unknown'));
+        RateLimiter::for(
+            'qr-scan',
+            fn (Request $request): Limit =>
+                Limit::perMinute(30)->by($request->ip() ?? 'unknown'),
+        );
 
-        // Webhook pembayaran: batasi laju per IP (dedup + signature tetap lapis utama).
-        RateLimiter::for('qris-webhook', fn (Request $request): Limit => Limit::perMinute(120)->by($request->ip() ?? 'unknown'));
+        // Webhook pembayaran: deduplikasi dan signature tetap diperlukan.
+        RateLimiter::for(
+            'qris-webhook',
+            fn (Request $request): Limit =>
+                Limit::perMinute(120)->by($request->ip() ?? 'unknown'),
+        );
     }
 
     /**
@@ -63,14 +91,15 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        Password::defaults(fn (): ?Password => app()->isProduction()
-            ? Password::min(12)
-                ->mixedCase()
-                ->letters()
-                ->numbers()
-                ->symbols()
-                ->uncompromised()
-            : null,
+        Password::defaults(
+            fn (): ?Password => app()->isProduction()
+                ? Password::min(12)
+                    ->mixedCase()
+                    ->letters()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised()
+                : null,
         );
     }
 }

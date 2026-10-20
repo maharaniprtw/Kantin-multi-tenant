@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Admin Kantin', 'email' => 'admin@kantin.test', 'role' => 'admin', 'password' => 'test123'],
             ['name' => 'Operator Kantin', 'email' => 'operator@kantin.test', 'role' => 'operator', 'password' => 'test123'],
             ['name' => 'Operator Tenant', 'email' => 'tenant@kantin.test', 'role' => 'tenant', 'password' => 'test123'],
+            ['name' => 'Customer', 'email' => 'customer@kantin.test', 'role' => 'customer', 'password' => 'test123'],
         ];
 
         foreach ($demo as $row) {
